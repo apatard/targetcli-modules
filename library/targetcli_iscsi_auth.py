@@ -82,8 +82,8 @@ def main():
 
     rc, out, err = module.run_command(
       "targetcli '/iscsi/%(wwn)s/tpg1/acls/%(initiator_wwn)s get auth'" % module.params)
-    userid = re.search('(?<=userid\=).*(?=\n)', out).group(0)
-    password = re.search('(?<=password\=).*(?=\n)', out).group(0)
+    userid = re.search('(?<=[^\w]userid\=).*(?=\n)', out).group(0)
+    password = re.search('(?<=[^\w]password\=).*(?=\n)', out).group(0)
     userid_mutual = re.search('(?<=mutual_userid\=).*(?=\n)', out).group(0)
     password_mutual = re.search('(?<=mutual_password\=).*(?=\n)', out).group(0)
 
