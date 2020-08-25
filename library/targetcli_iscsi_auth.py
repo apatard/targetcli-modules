@@ -85,22 +85,36 @@ def main():
     userid = re.search('(?<=[^\w]userid\=).*(?=\n)', out).group(0)
     password = re.search('(?<=[^\w]password\=).*(?=\n)', out).group(0)
     userid_mutual = re.search('(?<=mutual_userid\=).*(?=\n)', out).group(0)
+    if userid_mutual == '':
+        userid_mutual = "None"
     password_mutual = re.search('(?<=mutual_password\=).*(?=\n)', out).group(0)
+    if password_mutual == '':
+        password_mutual = "None"
 
     if rc != 0:
       module.fail_json(msg="failed to read authentication parameters")
 
-    if password != module.params['password'] or userid != module.params['userid'] or password_mutual != module.params['password_mutual'] or userid_mutual != module.params['userid_mutual']:
-      if module.check_mode:
-        module.exit_json(changed=True)
-      else:
-        rc, out, err = module.run_command(
-          "targetcli '/iscsi/%(wwn)s/tpg1/acls/%(initiator_wwn)s set auth password=%(password)s userid=%(userid)s mutual_password=%(password_mutual)s mutual_userid=%(userid_mutual)s'"
-          % module.params)
-        if rc == 0:
-          module.exit_json(changed=True)
-        else:
-          module.fail_json(msg="Failed to set iSCSI authentication parameters")
+    changed = False
+    if password != module.params['password']:
+        changed = True
+    if userid != module.params['userid']:
+        changed = True
+    if password_mutual != module.params['password_mutual']:
+        changed = True
+    if userid_mutual != module.params['userid_mutual']:
+        changed = True
+
+    if (changed is False) or module.check_mode:
+        module.exit_json(changed=changed)
+    cmd = "targetcli '/iscsi/%(wwn)s/tpg1/acls/%(initiator_wwn)s set auth password=%(password)s userid=%(userid)s"
+    if module.params['userid_mutual'] != "None":
+        cmd += " mutual_password=%(password_mutual)s mutual_userid=%(userid_mutual)s"
+    cmd += "'"
+    rc, out, err = module.run_command(cmd % module.params)
+    if rc == 0:
+      module.exit_json(changed=True)
+    else:
+      module.fail_json(msg="Failed to set iSCSI authentication parameters")
 
   except OSError as e:
     module.fail_json(msg="Failed to check iSCSI authentication - %s" % (e))
